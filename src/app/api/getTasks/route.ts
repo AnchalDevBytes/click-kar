@@ -42,6 +42,8 @@ export async function GET(req: NextRequest) {
 
         // Construct filters
         const filters: Filters = { userId };
+        console.log("priorit-----", priority);
+        
         if (priority) filters.priority = parseInt(priority, 10);
         if (status) filters.status = status;
 
@@ -56,17 +58,17 @@ export async function GET(req: NextRequest) {
             orderBy: Object.keys(orderBy).length > 0 ? orderBy : undefined,
         });
 
-        if(!tasks) {
+        if(!tasks || tasks.length === 0) {
             return NextResponse.json({
                 success: false,
                 message: "No tasks found",
             }, { status: 404 });
         }
-
+        
         return NextResponse.json({
             success: true,
             message : "Tasks fetched successfully",
-            data : tasks,
+            tasks,
         });
 
     } catch (error) {

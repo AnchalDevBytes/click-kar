@@ -33,15 +33,15 @@ interface Task {
 export function TaskList() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
-  const [statusFilter, setStatusFilter] = useState<string>("pending");
-  const [priorityFilter, setPriorityFilter] = useState<number>(1);
-  const [sortByFilter, setSortByFilter] = useState<string>("startTime");
-  const [sortOrder, setSortOrder] = useState("asc");
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [priorityFilter, setPriorityFilter] = useState<number | null>(null);
+  const [sortByFilter, setSortByFilter] = useState<string>("");
+  const [sortOrder, setSortOrder] = useState("");
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
+  
   const calculateTimeToFinish = (startTime: Date, endTime: Date) => {
     const diff = new Date(endTime).getTime() - new Date(startTime).getTime();
     return (diff / (1000 * 60 * 60)).toFixed(2);
@@ -133,18 +133,25 @@ export function TaskList() {
     }
   };
 
+  const buildQuery = (params: Record<string, any>) => {
+    return Object.entries(params)
+      .filter(([_, value]) => value !== null && value !== undefined && value !== "")
+      .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+      .join("&");
+  };
+
   const getAllTasks = async (data: {
     priority: number | null;
     status: string | null;
     sortBy: string;
     sortOrder: string;
   }) => {
-    const { priority, status, sortBy, sortOrder } = data;
 
     try {
       setIsLoading(true);
+      const queryString = buildQuery(data);
       const response = await axios.get(
-        `/api/getTasks?priority=${priority}&status=${status}&sortBy=${sortBy}&sortOrder=${sortOrder}`
+        `/api/getTasks?${queryString}`
       );
       if (!response || !response.data || !response.data.success) {
         toast({
@@ -154,7 +161,7 @@ export function TaskList() {
         });
         return;
       }
-      setTasks(response.data.tasks);
+      setTasks(response?.data?.tasks);
     } catch (error) {
       if (error instanceof AxiosError) {
         toast({
@@ -221,17 +228,21 @@ export function TaskList() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuItem
-                onClick={() => handleSortChange("startTime")}
-              >
+              <DropdownMenuItem onClick={() => handleSortChange("startTime")}>
                 Start time:{" "}
-                {sortByFilter === "startTime" ? (sortOrder === "asc" ? "↑" : "↓") : ""}
+                {sortByFilter === "startTime"
+                  ? sortOrder === "asc"
+                    ? "↑"
+                    : "↓"
+                  : ""}
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => handleSortChange("endTime")}
-              >
+              <DropdownMenuItem onClick={() => handleSortChange("endTime")}>
                 End time:{" "}
-                {sortByFilter === "endTime" ? (sortOrder === "asc" ? "↑" : "↓") : ""}
+                {sortByFilter === "endTime"
+                  ? sortOrder === "asc"
+                    ? "↑"
+                    : "↓"
+                  : ""}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -244,10 +255,7 @@ export function TaskList() {
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               {[1, 2, 3, 4, 5].map((p) => (
-                <DropdownMenuItem
-                  key={p}
-                  onClick={() => setPriorityFilter(p)}
-                >
+                <DropdownMenuItem key={p} onClick={() => setPriorityFilter(p)}>
                   {p}
                 </DropdownMenuItem>
               ))}
@@ -278,65 +286,73 @@ export function TaskList() {
         </div>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-12">
-              <Checkbox
-                checked={selectedTasks.length === tasks.length}
-                onCheckedChange={(checked) => {
-                  setSelectedTasks(checked ? tasks.map((t) => t.id) : []);
-                }}
-              />
-            </TableHead>
-            <TableHead>Task ID</TableHead>
-            <TableHead>Title</TableHead>
-            <TableHead>Priority</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Start Time</TableHead>
-            <TableHead>End Time</TableHead>
-            <TableHead>Total time to finish (hrs)</TableHead>
-            <TableHead className="w-12">Edit</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {tasks.map((task) => (
-            <TableRow key={task.id}>
-              <TableCell>
+      {isLoading ? (
+        <div className="w-full h-96 flex items-center justify-center text-2xl tracking-widest text-yellow-500 animate-pulse">...loading</div>
+      ) : !tasks || tasks?.length < 1 ? (
+        <div className="w-full h-96 flex items-center justify-center text-2xl tracking-widest text-yellow-500 animate-pulse">No task founds</div>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-12">
                 <Checkbox
-                  checked={selectedTasks.includes(task.id)}
+                  checked={selectedTasks.length === tasks?.length}
                   onCheckedChange={(checked) => {
-                    setSelectedTasks(
-                      checked
-                        ? [...selectedTasks, task.id]
-                        : selectedTasks.filter((id) => id !== task.id)
-                    );
+                    setSelectedTasks(checked ? tasks?.map((t) => t.id) : []);
                   }}
                 />
-              </TableCell>
-              <TableCell>{task.id}</TableCell>
-              <TableCell>{task.title}</TableCell>
-              <TableCell>{task.priority}</TableCell>
-              <TableCell>{task.status}</TableCell>
-              <TableCell>{new Date(task.startTime).toLocaleString()}</TableCell>
-              <TableCell>{new Date(task.endTime).toLocaleString()}</TableCell>
-              <TableCell>
-                {calculateTimeToFinish(task.startTime, task.endTime)}
-              </TableCell>
-              <TableCell>
-                <TaskDialog
-                  isSaving={isSaving}
-                  isDialogOpen={isDialogOpen}
-                  setIsDialogOpen={setIsDialogOpen}
-                  mode="edit"
-                  task={task}
-                  onSubmit={handleUpdateTask}
-                />
-              </TableCell>
+              </TableHead>
+              <TableHead>Task ID</TableHead>
+              <TableHead>Title</TableHead>
+              <TableHead>Priority</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Start Time</TableHead>
+              <TableHead>End Time</TableHead>
+              <TableHead>Total time to finish (hrs)</TableHead>
+              <TableHead className="w-12">Edit</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {tasks?.map((task) => (
+              <TableRow key={task.id}>
+                <TableCell>
+                  <Checkbox
+                    checked={selectedTasks.includes(task.id)}
+                    onCheckedChange={(checked) => {
+                      setSelectedTasks(
+                        checked
+                          ? [...selectedTasks, task.id]
+                          : selectedTasks.filter((id) => id !== task.id)
+                      );
+                    }}
+                  />
+                </TableCell>
+                <TableCell>{task.id}</TableCell>
+                <TableCell>{task.title}</TableCell>
+                <TableCell>{task.priority}</TableCell>
+                <TableCell>{task.status}</TableCell>
+                <TableCell>
+                  {new Date(task.startTime).toLocaleString()}
+                </TableCell>
+                <TableCell>{new Date(task.endTime).toLocaleString()}</TableCell>
+                <TableCell>
+                  {calculateTimeToFinish(task.startTime, task.endTime)}
+                </TableCell>
+                <TableCell>
+                  <TaskDialog
+                    isSaving={isSaving}
+                    isDialogOpen={isDialogOpen}
+                    setIsDialogOpen={setIsDialogOpen}
+                    mode="edit"
+                    task={task}
+                    onSubmit={handleUpdateTask}
+                  />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
     </div>
   );
 }
