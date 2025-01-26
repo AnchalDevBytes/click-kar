@@ -1,5 +1,6 @@
 
 import { Dashboard } from "@/components/Dashboard";
+import SignOut from "@/components/SignOut";
 import { TaskList } from "@/components/TaskList";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
@@ -12,9 +13,7 @@ export default function Home() {
           <span className="text-blue-500">Click</span>
           <span className="text-sky-300">Kar</span>
         </Link>
-        <button className="bg-purple-600 text-white px-4 py-2 rounded-md">
-          Sign out
-        </button>
+        <SignOut/>
       </div>
 
       <Tabs defaultValue="task-list">
