@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({
                 success : false,
                 message : "All field are Required!"
-            });
+            }, { status: 400 });
         }
     
         const user : User | null = await prisma.user.findUnique({
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ 
                 success: false, 
                 message: "User does not exist" 
-            });
+            }, { status: 400 });
         }
 
         const isPasswordCorrect : boolean = await bcrypt.compare(password, user.password);
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({
                 success: false, 
                 message: "Invalid password",
-            })
+            }, { status : 401})
         }
 
         const newToken = generateToken({id : user.id, email});
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({
                 success : false,
                 message : "Error while fetching user!"
-            });
+            }, { status: 500 });
         }
     
         const response = NextResponse.json(
@@ -79,11 +79,13 @@ export async function POST(req: NextRequest) {
     } catch (error) {
         if(error instanceof Error) {
             return NextResponse.json(
-                { success: false, message: error.message }
+                { success: false, message: error.message },
+                { status: 500 }
             );
         } else {
             return NextResponse.json(
-                { success: false, message: "Unknown error occurred" }
+                { success: false, message: "Unknown error occurred" },
+                { status: 500 }
             );
         }
     }

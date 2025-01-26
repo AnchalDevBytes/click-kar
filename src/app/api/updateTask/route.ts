@@ -29,6 +29,16 @@ export async function PUT(req: NextRequest) {
             );
         }
 
+        const start = new Date(startTime);
+        const end = new Date(endTime);
+
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+            return NextResponse.json({
+                success: false,
+                message: "Invalid date format. Use 'YYYY-MM-DD'.",
+            });
+        }
+
         const updatedTask = await prisma.task.update({
             where: {
                 id,
@@ -36,16 +46,24 @@ export async function PUT(req: NextRequest) {
             },
             data: {
                 title,
-                startTime,
-                endTime,
+                startTime : start,
+                endTime : end,
                 priority,
                 status,
             },
         });
+        if(!updatedTask) {
+            return NextResponse.json(
+                { success: false, message: "Task not found" },
+                { status: 404 }
+            )
+        }
 
         return NextResponse.json({
             success: true,
             task: updatedTask,
+        }, {
+            status: 200
         });
     } catch (error) {
         if(error instanceof Error) {
