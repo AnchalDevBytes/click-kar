@@ -43,8 +43,8 @@ export async function GET() {
                 <li><strong>/updateTaks</strong>: update a task</li>
                 <li><strong>/deleteTaks</strong>: delete a task</li>
             </ul>
-            <p><strong>Note:</strong> You must sign in to access the API functionalities.</p>
-            <p>For more information, feel free to explore the codebase on <a href="https://github.com/your-repo" target="_blank">GitHub</a>.</p>
+            <p><strong>Note:</strong> You must sign in to access the API functionalities. <a href="https://click-kar.vercel.app/signup" target="_blank">Sign Up</a></p>
+            <p>For more information, feel free to explore the codebase on <a href="https://github.com/AnchalDevBytes/click-kar" target="_blank">GitHub</a>.</p>
         </body>
         </html>
     `;
