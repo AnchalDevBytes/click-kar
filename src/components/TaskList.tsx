@@ -41,6 +41,7 @@ export function TaskList() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const calculateTimeToFinish = (startTime: Date, endTime: Date) => {
     const diff = new Date(endTime).getTime() - new Date(startTime).getTime();
@@ -190,6 +191,50 @@ export function TaskList() {
     }
   };
 
+  const handleDeleteTask = async () => {
+    try {
+      setIsDeleting(true);
+      const response = await axios.delete(`/api/deleteTask`, {
+        data: selectedTasks,
+      });
+
+      if (!response || !response.data || !response.data.success) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: response.data?.message || "Failed to delete tasks",
+        });
+        return;
+      }
+  
+      setTasks((prevTasks) => 
+        prevTasks.filter((task) => !selectedTasks.includes(task.id))
+      );
+  
+      toast({
+        title: "Success",
+        description: "Task deleted successfully!",
+      });
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: error.response?.data?.message || "Failed to delete tasks",
+        });
+        return;
+      }
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Something went wrong",
+      });
+    } finally {
+      setIsDeleting(false)
+    }
+  };
+  
+
   useEffect(() => {
     getAllTasks({
       priority: priorityFilter,
@@ -214,10 +259,16 @@ export function TaskList() {
           <Button
             variant="destructive"
             size="sm"
-            disabled={selectedTasks.length === 0}
-            onClick={() => {}}
+            disabled={selectedTasks.length === 0 || isDeleting}
+            onClick={handleDeleteTask}
           >
-            Delete selected
+            {
+              isDeleting ? (
+                <span>Deleting...</span>
+              ) : (
+                <span>Delete selected</span>
+              )
+            }
           </Button>
         </div>
         <div className="space-x-2">
