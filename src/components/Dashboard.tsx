@@ -9,9 +9,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useState } from "react";
+import { toast } from "@/hooks/use-toast";
+import axios, { AxiosError } from "axios";
+import { useEffect, useState } from "react";
+import { DashboardSkeleton } from "@/components/DashboardSkeleton";
 
-interface DashboardStats {
+interface StatsResponse {
   summary: {
     totalTasks: number;
     tasksCompletedPercentage: number;
@@ -22,21 +25,57 @@ interface DashboardStats {
     totalPendingTasks: number;
     totalTimeLapsed: number;
     estimatedTimeToFinish: number;
-    prioritySummary: {
-      priority: number;
-      pendingTasks: number;
-      timeLapsed: number;
-      timeToFinish: number;
-    }[];
+    prioritySummary: PrioritySummary[];
   };
 }
 
+interface PrioritySummary {
+  priority: number;
+  pendingTasks: number;
+  timeLapsed: number;
+  timeToFinish: number;
+}
+
 export function Dashboard() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [stats, setStats] = useState<StatsResponse | null>(null);
 
   // Fetch stats from API...
 
-  if (!stats) return null;
+  useEffect(() => {
+    const fetchStatsData = async () => {
+      try {
+        const response = await axios.get("/api/statistic");
+        if(!response || !response.data.success) {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: response.data?.message,
+          });
+          return;
+        }
+
+        setStats(response.data.data)
+      } catch (error) {
+        if (error instanceof AxiosError) {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: error.response?.data?.message,
+          });
+          return;
+        }
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Something went wrong while fetching stats",
+        });
+      }
+    }
+
+    fetchStatsData();
+  }, []);
+
+  if (!stats) return <DashboardSkeleton/>;
 
   return (
     <div className="space-y-8">

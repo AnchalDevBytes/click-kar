@@ -65,14 +65,14 @@ export async function POST(req : NextRequest) {
             return NextResponse.json({
                 success : false,
                 message : "Error while creating task!"
-            });
+            }, { status: 404 });
         }
       
         return NextResponse.json({
             success: true,
             message: "Task created successfully",
             task,
-        });
+        }, { status: 200 });
 
     } catch (error) {
         if(error instanceof Error) {
